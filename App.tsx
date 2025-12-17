@@ -1,12 +1,35 @@
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, Stars, ContactShadows } from '@react-three/drei';
 import ChristmasTree from './components/ChristmasTree';
 import Snowfall from './components/Snowfall';
 import UIOverlay from './components/UIOverlay';
+import { AppState, ChristmasWish } from './types';
+import { generateChristmasWish } from './services/geminiService';
 
 const App: React.FC = () => {
+  const [appState, setAppState] = useState<AppState>(AppState.IDLE);
+  const [wish, setWish] = useState<ChristmasWish | null>(null);
+
+  const handleOpenGift = async () => {
+    setAppState(AppState.GENERATING);
+    try {
+      const result = await generateChristmasWish();
+      setWish(result);
+      setAppState(AppState.DISPLAYING);
+    } catch (error) {
+      console.error("Error:", error);
+      setWish({ message: "Chúc bạn một mùa Giáng sinh an lành và ngập tràn hạnh phúc!" });
+      setAppState(AppState.DISPLAYING);
+    }
+  };
+
+  const handleClose = () => {
+    setAppState(AppState.IDLE);
+    setWish(null);
+  };
+
   return (
     <div className="relative w-full h-screen bg-[#02050c]">
       {/* 3D Scene */}
@@ -19,7 +42,7 @@ const App: React.FC = () => {
           position={[0, 15, 5]} 
           angle={0.3} 
           penumbra={1} 
-          intensity={2} 
+          intensity={2.5} 
           castShadow 
           color="#ffffff"
         />
@@ -41,19 +64,24 @@ const App: React.FC = () => {
         <OrbitControls 
           enablePan={false} 
           minDistance={7} 
-          maxDistance={20} 
+          maxDistance={18} 
           maxPolarAngle={Math.PI / 1.8} 
-          autoRotate
+          autoRotate={appState === AppState.IDLE}
           autoRotateSpeed={0.5}
           target={[0, 0.5, 0]}
         />
       </Canvas>
 
       {/* UI Overlay */}
-      <UIOverlay />
+      <UIOverlay 
+        appState={appState} 
+        onOpenGift={handleOpenGift} 
+        wish={wish} 
+        onClose={handleClose}
+      />
 
-      {/* Hiệu ứng phủ sương nhẹ mờ ảo ở các góc */}
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/40"></div>
+      {/* Ambient filter overlay */}
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/20"></div>
     </div>
   );
 };

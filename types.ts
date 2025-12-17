@@ -1,3 +1,10 @@
 
-// This file is no longer needed but kept empty to avoid import errors if any remain
-export {};
+export interface ChristmasWish {
+  message: string;
+}
+
+export enum AppState {
+  IDLE = 'IDLE',
+  GENERATING = 'GENERATING',
+  DISPLAYING = 'DISPLAYING'
+}
